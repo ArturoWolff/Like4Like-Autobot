@@ -8,7 +8,7 @@
 
 Like4Like is an exchange platform: you earn **credits** by engaging with other users' content (liking posts, following profiles), and those credits are spent to push your own content to other users' queues. The grind is entirely mechanical — click a button, wait for a popup, click Like, close the popup, confirm the action. Human eyes are not required.
 
-This bot automates that mechanical loop end-to-end using **Selenium** driving a **real** Chrome instance (via `undetected-chromedriver`, which patches the CDP fingerprint to pass bot-detection). Because it uses a **persistent Chrome profile**, your session cookies survive between runs, so you log in once and the bot rides that session indefinitely. (You still need to log in manually)
+This bot automates that mechanical loop end-to-end using **Selenium** driving a **real** Chrome instance (via `undetected-chromedriver`, which patches the CDP fingerprint to pass bot-detection). Because it uses a **persistent Chrome profile**, your session cookies survive between runs, so you log in once and the bot rides that session indefinitely.
 
 ---
 
@@ -32,7 +32,7 @@ Like4Like Autobot/
 
 The top-level entry point presents an interactive menu. Before any loop runs, it calls `setup_browser()`, which instantiates an `undetected_chromedriver.Chrome` object pointed at the persistent `chrome_profile/` directory. This means:
 
-- The browser opens with your previously saved cookies, extensions, and preferences. (Given you have one on root)
+- The browser opens with your previously saved cookies, extensions, and preferences.
 - Chrome version is pinned to `version_main=145` to keep the ChromeDriver patch aligned with your installed browser.
 - The `driver` object is passed **by reference** into whichever module runs next — there is only ever one browser instance open at a time.
 
@@ -43,7 +43,7 @@ Two functions used by every module:
 | Function | What it does |
 |---|---|
 | `login_like4like(driver)` | Navigates to `like4like.org/login/`, then waits 30 seconds (countdown printed to console) for you to log in manually if needed. On subsequent runs the session is already authenticated, so this is effectively a no-op. |
-| `get_current_points(driver)` | Reads the `#earned-credits` element's text and returns it as an `int`. Returns `None` on failure. Used to verify that an interaction actually awarded points. If window gets resized, the bot will fail to recognize your points. Keep the website big enough that it doesn't switch to drop-down menus to avoid this. |
+| `get_current_points(driver)` | Reads the `#earned-credits` element's text and returns it as an `int`. Returns `None` on failure. Used to verify that an interaction actually awarded points. |
 
 ### `facebook.py` — Facebook Likes Engine
 
@@ -60,9 +60,9 @@ Flow per iteration:
 8. Close the popup, switch back to the main window.
 9. Click the `confirm1.png` confirmation button on Like4Like.
 10. Poll `get_current_points()` up to 8 times (1-second intervals) waiting for the point total to increment.
-11. If points didn't change → **failsafe reset**: navigate to homepage then back to the earn page and retry. This is to avoid the website's built-in system where after a certain number of failures it flags you as a bot and stops showing posts to interact with.
+11. If points didn't change → **failsafe reset**: navigate to homepage then back to the earn page and retry.
 12. If points changed → `successful_actions += 1`, sleep 3 seconds, continue.
-13. Loop exits when `batch_size` is reached or no more earn buttons are found. batch_size is exclusive to instagram follows to avoid meta's bot detection.
+13. Loop exits when `batch_size` is reached or no more earn buttons are found.
 
 **Returns** `True` on clean exit, `False` on fatal `WebDriverException` (browser closed/disconnected).
 
@@ -87,7 +87,7 @@ Targets `like4like.org/user/earn-instagram-follow.php`. After opening the popup:
 - Handles edge cases: already following, private accounts (`"Requested"` state).
 - Only confirms with Like4Like if the follow actually succeeded.
 
-> **Why default `batch_size=5` for follows?** Instagram's follow rate-limits are aggressive. The master loop enforces an additional 1-hour cooldown on top of the batch cap for extra safety.
+> **Why default `batch_size=5` for follows?** Instagram's follow rate-limits are aggressive. The master loop enforces an additional 1-hour cooldown on top of the batch cap.
 
 ### `master.py` — The Orchestrator
 
@@ -107,7 +107,7 @@ loop forever:
     → sleep 5s
 ```
 
-If any module returns `False` (fatal browser error), the master loop breaks and the browser is cleanly quit. `Ctrl+C` is caught and also triggers cleanup.
+If any module returns `False` (fatal browser error), the master loop breaks and the browser is cleanly quit. `Ctrl+C` is caught gracefully and also triggers cleanup.
 
 ---
 
@@ -271,4 +271,3 @@ python3 -m venv venv && source venv/bin/activate && pip install -r requirements.
 # → Select 1, log in to Like4Like + Facebook + Instagram, close browser
 # → Select 5 for the full master loop
 ```
-This was coded and tested on Garuda Mokka
